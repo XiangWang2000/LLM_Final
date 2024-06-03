@@ -5,26 +5,27 @@
   
 ## 量化模型
 使用[llama.cpp](https://github.com/ggerganov/llama.cpp)來進行量化  
-#### Step 1 下載llama.cpp檔案並移動到該資料夾底下
+* Step 1 下載llama.cpp檔案並移動到該資料夾底下
 ```
 git clone https://github.com/ggerganov/llama.cpp.git
 cd llama.cpp
 ```
-#### Step 2 安裝所需套件
+* Step 2 安裝所需套件
 ```
 pip install -r requirements.txt
 ```
-#### Step 3 將前面已下載完成的Llama 3模型轉成.gguf檔
+* Step 3 將前面已下載完成的Llama 3模型轉成.gguf檔
 ```
 python3 convert-hf-to-gguf.py ../Meta-Llama3-8B-Instruct --outfile models/ggml-meta-llama-3-8b-16f.gguf
 ```
-#### Step 4 進行量化(使用Q4_K_M方法)
+* Step 4 進行量化(使用Q4_K_M方法)
 ```
 ./quantize ./models/ggml-meta-llama-3-8b-16f.gguf ./models/ggml-meta-llama-3-8b-Q4_K_M.gguf Q4_K_M
 ```
 完成模型的量化後，就要使用這個模型，來進行後續RAG的使用  
 若你覺得前面的操作太過麻煩的話，也可以直接下載我已經[量化好的模型](https://huggingface.co/xiangw21/ggml-meta-llama-3-8b-Q4_K_M.gguf)進行使用
 
+## RAG with Llama 3
 在進行RAG的使用之前，一樣需要安裝一些必要的套件
 ```
 langchain
@@ -34,7 +35,7 @@ sentence-transformers
 llama-cpp-python
 ```
 安裝好後就可以開始囉  
-#### Step 1 使用文件載入器載入要做為資料庫的文件，並使用 Text splitter 分割文件
+* Step 1 使用文件載入器載入要做為資料庫的文件，並使用 Text splitter 分割文件
 ```
 from langchain.document_loaders import PyMuPDFLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
@@ -43,7 +44,7 @@ PDF_data = loader.load()
 text_splitter = RecursiveCharacterTextSplitter(chunk_size=100, chunk_overlap=5)
 all_splits = text_splitter.split_documents(PDF_data)
 ```
-#### Step 2 載入文字Embedding model，並將embedding的結果匯入VectorDB
+* Step 2 載入文字Embedding model，並將embedding的結果匯入VectorDB
 ```
 from langchain.embeddings import HuggingFaceEmbeddings
 from langchain.vectorstores import Chroma
@@ -54,7 +55,7 @@ embedding = HuggingFaceEmbeddings(model_name=model_name,
 persist_directory = 'db'
 vectordb = Chroma.from_documents(documents=all_splits, embedding=embedding, persist_directory=persist_directory)
 ```
-#### Step 3 在完成第一份資料的匯入後，將剩餘的資料一一追加
+* Step 3 在完成第一份資料的匯入後，將剩餘的資料一一追加
 ```
 for i in range(3,10):
     loader1 = PyMuPDFLoader("{}.pdf".format(i))
@@ -62,7 +63,7 @@ for i in range(3,10):
     all_splits1 = text_splitter.split_documents(PDF_data1)
     vectordb.add_documents(documents=all_splits1, embedding=embedding, persist_directory=persist_directory)
 ```
-#### Step 4 設定問題
+* Step 4 設定問題
 ```
 questions=['Give an example where F1-score is more appropriate than accuracy (actual numbers must be included, and F1-score and accuracy must be calculated separately).',
          'Explain the selection method of K in the K means algorithm.',
@@ -71,7 +72,7 @@ questions=['Give an example where F1-score is more appropriate than accuracy (ac
          'Explain how one-hot encoding is done, and explain the reasons (advantages) why one-hot encoding should be used.',
          'Please give three commonly used activation functions and explain their definitions and applicable times.']
 ```
-#### Step 5 使用 LangChain 的 LlamaCpp，並增加最大輸出tokens，避免出現輸出到一半斷掉的問題
+* Step 5 使用 LangChain 的 LlamaCpp，並增加最大輸出tokens，避免出現輸出到一半斷掉的問題
 ```
 from langchain.callbacks.manager import CallbackManager
 from langchain.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
@@ -88,7 +89,7 @@ llm = LlamaCpp(
     verbose=True,
 )
 ```
-#### Step 6 先測試使用Prompt的方式來測試是否能夠達到需要的效果
+* Step 6 先測試使用Prompt的方式來測試是否能夠達到需要的效果
 ```
 from langchain.chains import LLMChain
 from langchain.chains.prompt_selector import ConditionalPromptSelector
@@ -120,7 +121,7 @@ QUESTION_PROMPT_SELECTOR = ConditionalPromptSelector(
 )
 
 ```
-#### Step 7 依序詢問問題
+* Step 7 依序詢問問題
 ```
 prompt = QUESTION_PROMPT_SELECTOR.get_prompt(llm)
 llm_chain = LLMChain(prompt=prompt, llm=llm)
@@ -128,7 +129,7 @@ for question in questions:
     print(question)
     llm_chain.invoke({"question": question})
 ```
-#### Step 8 接著使用剛剛建立好的資料庫當作Retriever
+* Step 8 接著使用剛剛建立好的資料庫當作Retriever
 ```
 retriever = vectordb.as_retriever()
 qa = RetrievalQA.from_chain_type(
@@ -138,7 +139,7 @@ qa = RetrievalQA.from_chain_type(
     verbose=True
 )
 ```
-#### Step 9 依序詢問問題，以測試RAG的效果與單純使用Prompt的效果差異
+* Step 9 依序詢問問題，以測試RAG的效果與單純使用Prompt的效果差異
 ```
 for question in questions:
     print(question)
