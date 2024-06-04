@@ -240,5 +240,5 @@ F1 = 2 * ((TP)/(TP+FN)) * ((TN)/(TN+FP)))
 >3. **Early stopping**: You can also try early stopping by monitoring the performance of your model on a validation set during training. If you notice that the performance is no longer improving (or even degrading) after some point, then it's likely that your model has already reached its optimal level of accuracy and further training would only lead to overfitting.
 
 ## 結論
-由以上範例可知，有些題目經過RAG之後，可以得到比較好和比較精確的答案，但如果是比較常是一點的問題的話，不需使用RAG也能夠得到很好的效果。  
+由以上範例可知，有些題目經過RAG之後，可以得到比較好和比較精確的答案，但如果是比較常識一點的問題的話，不需使用RAG也能夠得到很好的效果。  
 因此，這個`Llama 3 + RAG`的組合非常適合應用在期中末考，老師有開放查看簡報但是斷網的上機考
